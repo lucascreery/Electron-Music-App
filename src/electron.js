@@ -9,19 +9,18 @@ const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-d
 const path = require('path')
 const url = require('url')
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
+
 let mainWindow
 
 function createWindow() {
-	// Create the browser window.
 	mainWindow = new BrowserWindow({
 		width: 800,
 		height: 600,
 		webPreferences: { nodeIntegration: true },
+		frame: false,
+		icon: __dirname + '/icon.png'
 	})
 
-	// and load the index.html of the app.
 	const startUrl =
 		process.env.ELECTRON_START_URL ||
 		url.format({
@@ -31,11 +30,9 @@ function createWindow() {
 		})
 	mainWindow.loadURL(startUrl)
 	
-	// Open the DevTools.
 	if (startUrl == process.env.ELECTRON_START_URL) {
 		mainWindow.webContents.openDevTools()
 		
-		// Install React Dev Tools for or Dev Session
 		installExtension(REACT_DEVELOPER_TOOLS).then((name) => {
 			console.log(`Added Extension:  ${name}, to use extension reload election (Ctrl+R)`);
 		})

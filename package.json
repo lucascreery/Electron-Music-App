@@ -1,31 +1,56 @@
 {
-	"name": "electron-with-create-react-app",
-	"version": "0.1.0",
-	"private": true,
-	"devDependencies": {
-		"electron": "^8.2.3",
-		"electron-devtools-installer": "^3.0.0",
-		"electron-react-devtools": "^0.5.3",
-		"foreman": "^3.0.1",
-		"react-scripts": "0.8.5"
-	},
-	"dependencies": {
-		"electron-packager": "^14.2.1",
-		"react": "^16.1.1",
-		"react-dom": "^16.1.1",
-		"react-scripts": "0.8.5"
-	},
-	"homepage": "./",
-	"main": "src/electron.js",
-	"scripts": {
-		"start": "nf start",
-		"dev": "node src/electron-wait-react",
-		"start-react": "react-scripts start",
-		"start-electron": "electron .",
-		"pack": "build --dir",
-		"build": "react-scripts build",
-		"build_osx": "electron-packager . App --platform=darwin --arch=x64 --overwrite --icon=icon.ico ; echo 'Built for OSX'",
-		"build_linux": "electron-packager . App --platform=linux  --arch=x64 --overwrite --icon=icon.ico ; echo 'Built for LINUX'",
-		"build_win": "electron-packager . App --platform=win32  --arch=x64 --overwrite --icon=icon.ico ; echo 'Built for WIN'"
-	}
+  "name": "electron-with-create-react-app",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "electron": "^8.2.3",
+    "electron-devtools-installer": "^3.0.0",
+    "electron-react-devtools": "^0.5.3",
+    "foreman": "^3.0.1",
+    "react-scripts": "^3.4.1"
+  },
+  "dependencies": {
+    "@blueprintjs/core": "^3.26.1",
+    "async": "^3.2.0",
+    "axios": "^0.19.2",
+    "blueprint": "^2.1.5",
+    "blueprintjs": "0.0.8",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "electron-packager": "^14.2.1",
+    "express": "^4.17.1",
+    "ffmetadata": "^1.6.0",
+    "fs": "0.0.1-security",
+    "mongodb": "^3.5.7",
+    "mongoose": "^5.9.12",
+    "multer": "^1.4.2",
+    "music-metadata": "^6.3.7",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  },
+  "homepage": "./",
+  "main": "src/electron.js",
+  "scripts": {
+    "start": "nf start",
+    "dev": "node src/electron-wait-react",
+    "start-react": "react-scripts start",
+    "start-electron": "electron .",
+    "pack": "build --dir",
+    "build": "react-scripts build",
+    "build_osx": "electron-packager . App --platform=darwin --arch=x64 --overwrite --icon=icon.ico ; echo 'Built for OSX'",
+    "build_linux": "electron-packager . App --platform=linux  --arch=x64 --overwrite --icon=icon.ico ; echo 'Built for LINUX'",
+    "build_win": "electron-packager . App --platform=win32  --arch=x64 --overwrite --icon=icon.ico ; echo 'Built for WIN'"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }
