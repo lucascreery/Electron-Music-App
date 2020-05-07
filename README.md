@@ -6,15 +6,23 @@ This is a minimal music streamer created with a full MERN stack (MongoDB, Expres
 
 Install dependencies
 
-``npm install``
+```
+npm install
+```
 Build react
 
-``npm start build``
+```
+npm start build
+```
 Start the App
 
-``npm start``
+```
+npm start
+```
 Customize the application and build for multiplatform systems
 
-``npm run build_osx``
-``npm run build_win``
-``npm run build_linux``
+```
+npm run build_osx
+npm run build_win
+npm run build_linux
+```
