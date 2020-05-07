@@ -1,6 +1,6 @@
 # Electron-Music-App
 
-This is a minimal music streamer created with a full MERN stack (MongoDB, ExpressJS, React and Node.js)
+This is a minimal music streamer created with a full MERN stack (MongoDB, ExpressJS, React and Node.js) running on an Electron Application
 
 # Start
 
