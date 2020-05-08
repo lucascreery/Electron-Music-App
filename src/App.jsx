@@ -5,6 +5,8 @@ import { Button, Navbar, Alignment, Icon,
 import "@blueprintjs/core/lib/css/blueprint.css";
 import Audio from './components/audio'
 import axios from 'axios'
+const download = require('downloadjs')
+const path = require('path')
 
 const { BrowserWindow } = window.require('electron').remote;
 
@@ -15,21 +17,41 @@ class App extends Component {
 			selectedFile: '',
 			showUpload: false,
 			playing: {},
-			songList: []
+			songList: [],
+			selected: [],
+			contextX: 0,
+			contextY: 0,
+			contextVisible: 'hidden'
 		}
 		this.window = BrowserWindow.getFocusedWindow()
 		this.onChangeFile = this.onChangeFile.bind(this)
 		this.onUpload = this.onUpload.bind(this)
 		this.handleSongSelect = this.handleSongSelect.bind(this)
+		this.handleTempSelect = this.handleTempSelect.bind(this)
+		this.handleClick = this.handleClick.bind(this)
+		this.handleRightClick = this.handleRightClick.bind(this)
+		this.onDownload = this.onDownload.bind(this)
+		this.onDelete = this.onDelete.bind(this)
 	}
 
 	componentDidMount(){
 		axios.get("http://localhost:8080/music/list/").then((result) => {
-			console.log(result.data)
+			let sel = []
+			for(let i in result.data){
+				sel.push(false)
+			}
 			this.setState({
-				songList: result.data
+				songList: result.data,
+				selected: sel
 			})
 		})
+		document.addEventListener('click', this.handleClick, false)
+		document.addEventListener('contextmenu', this.handleRightClick, false)
+	}
+
+	componentWillUnmount(){
+		document.removeEventListener('click', this.handleClick, false)
+		document.removeEventListener('contextmenu', this.handleRightClick, false)
 	}
 
 	onChangeFile(e){
@@ -46,9 +68,6 @@ class App extends Component {
 		this.player.player.load()
 		this.player.player.oncanplay = () => {
 			this.player.player.play()
-			this.player.setState({
-				player: 'playing'
-			})
 		}
 
 	}
@@ -66,21 +85,97 @@ class App extends Component {
 		formData.append('song', this.state.selectedFile)
 
 		axios.post('http://localhost:8080/music/add', formData).then((result) => {
-			console.log(result.data.data.filename)
 			this.setState({
 				playing: result.data.data.filename
 			})
 			axios.get("http://localhost:8080/music/list/").then((getresult) => {
-				console.log(getresult.data)
+				let sel = []
+				for(let i in result.data){
+					sel.push(false)
+				}
 				this.setState({
-					songList: getresult.data
+					songList: getresult.data,
+					selected: sel
 				})
 			})
 		}).catch((err) => {
 			console.log(err)
 		})
-		this.setState({showUpload: false})
-		
+		this.setState({selectedFile: '', showUpload: false})
+	}
+
+	handleTempSelect(e){
+		let sel = [];
+		for(let i in this.state.selected){
+			if(i === e.currentTarget.id){
+				sel.push(true)
+			}else{
+				if(e.ctrlKey){
+					sel.push(this.state.selected[i])
+				}else{
+					sel.push(false)
+				}
+			}
+		}
+		this.setState({
+			selected: sel
+		})
+	}
+
+	handleClick(e){
+		if(!this.songTable.contains(e.target)){
+			let sel = []
+			for(let i in this.state.selected){
+				sel.push(false)
+			}
+			this.setState({
+				selected: sel
+			})
+		}
+		this.setState({contextVisible: 'hidden'})
+	}
+
+	handleRightClick(e){
+		e.preventDefault()
+		if(this.songTable.contains(e.target)){
+			this.setState({
+				contextVisible: 'visible', 
+				contextX: e.clientX, 
+				contextY: e.clientY
+			})
+			let sel = [];
+			for(let i in this.state.selected){
+				if(i === e.target.parentElement.id){
+					sel.push(true)
+				}else{
+					sel.push(this.state.selected[i])
+				}
+			}
+			this.setState({
+				selected: sel
+			})
+			}
+	}
+
+	onDownload = async (e) => {
+		let downloadName = '';
+		let selection = this.state.selected
+		for(let i in this.state.songList){
+			if(selection[i]){
+				downloadName = this.state.songList[i].filename
+				console.log('Downloading: ' + downloadName)
+				let filename = downloadName.split('\\').pop().split('/').pop();
+				const res = await fetch('http://localhost:8080/music/download/' + filename)
+				const blob = await res.blob()
+				let ext = path.extname(filename)
+				await download(blob, this.state.songList[i].title + ext, 'audio/*')
+				console.log('downloaded')
+			}
+		}
+	}
+
+	onDelete(){
+
 	}
 
 	render() {
@@ -110,25 +205,44 @@ class App extends Component {
 							<Button className="bp3-minimal" icon="cross" onClick={() => this.window.close()}></Button>
 						</Navbar.Group>
 				</Navbar>
-				<div style={{flex: 1}}>
-					<HTMLTable style={{width: '100%'}} interactive>
-						<thead>
-							<tr>
-								<th>Title</th>
-								<th>Album</th>
-								<th>Artist</th>
-							</tr>
-						</thead>
-						<tbody>
-							{this.state.songList.map((member, index) => 
-								<tr key={index} onDoubleClick={() => this.handleSongSelect(member)}>
-									<td>{member.title}</td>
-									<td>{member.album}</td>
-									<td>{member.artist}</td>
+				<div style={{flex: 1, overflow: 'auto'}}>
+					<div ref={table => this.songTable = table}>
+						<HTMLTable 
+							style={{
+								width: '100%', 
+								borderStyle: 'solid', 
+								borderWidth: 1
+							}} 
+							interactive 
+							condensed 
+							striped
+						>
+							<thead>
+								<tr>
+									<th>Title</th>
+									<th>Album</th>
+									<th>Artist</th>
 								</tr>
-							)}
-						</tbody>
-					</HTMLTable>
+							</thead>
+							<tbody>
+								{this.state.songList.map((member, index) => 
+									<tr 
+										key={index} 
+										id={index} 
+										onClick={this.handleTempSelect} 
+										onDoubleClick={() => this.handleSongSelect(member)}
+										style={{
+											backgroundColor: (this.state.selected[index]) && '#999999'
+										}}
+									>
+										<td>{member.title}</td>
+										<td>{member.album}</td>
+										<td>{member.artist}</td>
+									</tr>
+								)}
+							</tbody>
+						</HTMLTable>
+					</div>
 				</div>
 				<Audio 
 					ref={player => this.player = player} 
@@ -139,7 +253,7 @@ class App extends Component {
 					isOpen={this.state.showUpload} 
 					onClose={() => this.setState({showUpload: false})}
 					usePortal={true}>
-					<Card style={{position: "absolute", left: "50%", top: "50vh", transform: 'translate(-50%, -50%)'}}>
+					<Card style={{position: "fixed", left: "50%", top: "50vh", transform: 'translate(-50%, -50%)'}}>
 						<form onSubmit={this.onUpload} style={{display: 'flex', flexDirection: 'column'}}>
 							<input 
 								type="file" 
@@ -172,6 +286,16 @@ class App extends Component {
 						</form>
 					</Card>
 				</Overlay>
+				<Menu 
+					style={{
+						position: 'absolute', 
+						left: this.state.contextX, 
+						top: this.state.contextY, 
+						visibility: this.state.contextVisible,
+						boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.2)'
+					}}>
+					<MenuItem text="Download" onClick={this.onDownload} />
+				</Menu>
 			</div>
 		)
 	}

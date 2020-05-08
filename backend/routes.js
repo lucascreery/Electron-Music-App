@@ -2,7 +2,6 @@ const express = require("express")
 const Song = require('./models/song')
 const multer = require('multer')
 const mm = require('music-metadata')
-const util = require('util')
 
 const router = express.Router()
 
@@ -62,6 +61,14 @@ router.post("/add", upload.single("song"), async (req, res) => {
       message: err
     });
   }
+})
+
+router.get("/download/:file", (req, res) => {
+  filename = req.params.file
+  filename = filename.replace('%20', /\s+/g)
+  res.download(__dirname + '/music/' + filename , (err) => {
+    if(err) console.log('Error: ' + err)
+  })
 })
 
 module.exports = router

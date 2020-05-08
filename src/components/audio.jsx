@@ -27,10 +27,22 @@ export default class Audio extends Component {
         duration: e.target.duration
       });
     });
+    this.player.addEventListener("play", e => {
+      this.setState({
+        player: 'playing'
+      });
+    });
+    this.player.addEventListener("pause", e => {
+      this.setState({
+        player: 'paused'
+      });
+    });
   }
 
   componentWillUnmount() {
     this.player.removeEventListener("timeupdate", () => {});
+    this.player.removeEventListener("play", () => {});
+    this.player.removeEventListener("pause", () => {});
   }
 
   handleMouseOver(e){

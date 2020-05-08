@@ -17,6 +17,7 @@
     "blueprintjs": "0.0.8",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
+    "downloadjs": "^1.4.7",
     "electron-packager": "^14.2.1",
     "express": "^4.17.1",
     "ffmetadata": "^1.6.0",
