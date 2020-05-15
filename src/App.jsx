@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import { Button, Navbar, Alignment, Icon, 
 				Popover, Position, Menu, MenuItem, 
-				Overlay, Card, HTMLTable } from '@blueprintjs/core'
+				Overlay, Card, HTMLTable, InputGroup, Label } from '@blueprintjs/core'
 import "@blueprintjs/core/lib/css/blueprint.css";
 import Audio from './components/audio'
 import axios from 'axios'
+import logo from './logo.svg'
 const download = require('downloadjs')
 const path = require('path')
 
@@ -16,12 +17,14 @@ class App extends Component {
 		this.state = {
 			selectedFile: '',
 			showUpload: false,
+			showEdit: false,
 			playing: {},
 			songList: [],
 			selected: [],
 			contextX: 0,
 			contextY: 0,
-			contextVisible: 'hidden'
+			contextVisible: 'hidden',
+			lastSelected: {}
 		}
 		this.window = BrowserWindow.getFocusedWindow()
 		this.onChangeFile = this.onChangeFile.bind(this)
@@ -32,6 +35,7 @@ class App extends Component {
 		this.handleRightClick = this.handleRightClick.bind(this)
 		this.onDownload = this.onDownload.bind(this)
 		this.onDelete = this.onDelete.bind(this)
+		this.onEdit = this.onEdit.bind(this)
 	}
 
 	componentDidMount(){
@@ -90,7 +94,7 @@ class App extends Component {
 			})
 			axios.get("http://localhost:8080/music/list/").then((getresult) => {
 				let sel = []
-				for(let i in result.data){
+				for(let i in getresult.data){
 					sel.push(false)
 				}
 				this.setState({
@@ -152,7 +156,8 @@ class App extends Component {
 				}
 			}
 			this.setState({
-				selected: sel
+				lastSelected: this.state.songList[e.target.parentElement.id],
+				selected: sel,
 			})
 			}
 	}
@@ -163,31 +168,81 @@ class App extends Component {
 		for(let i in this.state.songList){
 			if(selection[i]){
 				downloadName = this.state.songList[i].filename
-				console.log('Downloading: ' + downloadName)
 				let filename = downloadName.split('\\').pop().split('/').pop();
 				const res = await fetch('http://localhost:8080/music/download/' + filename)
 				const blob = await res.blob()
 				let ext = path.extname(filename)
 				await download(blob, this.state.songList[i].title + ext, 'audio/*')
-				console.log('downloaded')
 			}
 		}
 	}
 
 	onDelete(){
+		let deleteName = '';
+		let selection = this.state.selected
+		for(let i in this.state.songList){
+			if(selection[i]){
+				deleteName = this.state.songList[i].filename
+				let filename = deleteName.split('\\').pop().split('/').pop();
+				axios.get('http://localhost:8080/music/delete/' + filename).then((result) => {
+					let sel = []
+					for(let i in result.data){
+						sel.push(false)
+					}
+					this.setState({
+						songList: result.data,
+						selected: sel
+					})
+				}).catch((err) => {
+					console.log(err)
+				})
+			}
+		}
+	}
 
+	onEdit(e){
+		e.preventDefault()
+		var newSong = this.state.lastSelected
+		newSong.title = document.getElementById('newTitle').value
+		newSong.album = document.getElementById('newAlbum').value
+		newSong.artist = document.getElementById('newArtist').value
+		axios.post('http://localhost:8080/music/edit/' + newSong._id, newSong).then((result) => {
+			let sel = []
+			for(let i in result.data){
+				sel.push(false)
+			}
+			this.setState({
+				songList: result.data,
+				selected: sel,
+				showEdit: false
+			})
+		}).catch((err) => {
+			console.log(err)
+		})
 	}
 
 	render() {
 		return (
-			<div className="App" style={{flex: 1, display: 'flex', flexDirection: 'column', height:'100vh', borderRadius: 10}}>
+			<div 
+				className="App" 
+				style={{
+					flex: 1, 
+					display: 'flex', 
+					flexDirection: 'column', 
+					height:'100vh', 
+					borderRadius: 10,
+					minWidth: 800,
+					minHeight: 600
+				}}>
 				<Navbar style={{WebkitAppRegion: 'drag', height: 30, margin: 0, padding: 0}}>
 						<Navbar.Group align={Alignment.LEFT} style={{WebkitAppRegion: 'no-drag', height: 30, marginLeft: 10}}>
-								<Navbar.Heading><Icon icon="music" /></Navbar.Heading>
+								<Navbar.Heading>
+									<img src={logo} alt="Icon" style={{width: 20, marginTop: 4}} />
+								</Navbar.Heading>
 								<Popover 
 									content={
 										<Menu>
-											<MenuItem text="Upload" onClick={() => this.setState({showUpload: true})} />
+											<MenuItem text="Upload" onClick={() => this.setState({showUpload: true})} icon="cloud-upload" />
 										</Menu>
 									}
 									position={Position.BOTTOM_LEFT}
@@ -219,9 +274,92 @@ class App extends Component {
 						>
 							<thead>
 								<tr>
-									<th>Title</th>
-									<th>Album</th>
-									<th>Artist</th>
+									<th
+										onClick={() => {
+											let sel = []
+											for(let i in this.state.songList){
+												sel.push(false)
+											}
+											this.setState({
+												songList: this.state.songList.sort((a, b) => {
+													let aTitle = a.title.toUpperCase()
+													let bTitle = b.title.toUpperCase()
+													let comp = 0
+													if(aTitle > bTitle){
+														comp = 1
+													} else if(aTitle < bTitle){
+														comp = -1
+													}
+													return comp
+												}),
+												selected: sel
+											})
+										}
+									}>Title</th>
+									<th
+										onClick={() => {
+											let sel = []
+											for(let i in this.state.songList){
+												sel.push(false)
+											}
+											this.setState({
+												songList: this.state.songList.sort((a, b) => {
+													let comp = 0
+													var aAlbum
+													var bAlbum
+													if(a.album) {
+														aAlbum = a.album.toUpperCase()
+													}else{
+														aAlbum = 'z'
+													}
+													if(b.album) {
+														bAlbum = b.album.toUpperCase()
+													} else {
+														bAlbum = 'z'
+													}
+													if(aAlbum > bAlbum){
+														comp = 1
+													} else if(aAlbum < bAlbum){
+														comp = -1
+													}
+													return comp
+												}),
+												selected: sel
+											})
+										}
+									}>Album</th>
+									<th
+										onClick={() => {
+											let sel = []
+											for(let i in this.state.songList){
+												sel.push(false)
+											}
+											this.setState({
+												songList: this.state.songList.sort((a, b) => {
+													let comp = 0
+													var aArtist
+													var bArtist
+													if(a.artist) {
+														aArtist = a.artist.toUpperCase()
+													}else{
+														aArtist = 'z'
+													}
+													if(b.artist) {
+														bArtist = b.artist.toUpperCase()
+													} else {
+														bArtist = 'z'
+													}
+													if(aArtist > bArtist){
+														comp = 1
+													} else if(aArtist < bArtist){
+														comp = -1
+													}
+													return comp
+												}),
+												selected: sel
+											})
+										}
+									}>Artist</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -286,6 +424,28 @@ class App extends Component {
 						</form>
 					</Card>
 				</Overlay>
+				<Overlay 
+					isOpen={this.state.showEdit} 
+					onClose={() => this.setState({showEdit: false})}
+					usePortal={true}>
+					<Card style={{position: "fixed", left: "50%", top: "50vh", transform: 'translate(-50%, -50%)'}}>
+						<form onSubmit={this.onEdit} style={{display: 'flex', flexDirection: 'column'}}>
+							<Label>
+								Title
+								<InputGroup id="newTitle" defaultValue={this.state.lastSelected.title} style={{marginBottom: 10}} fill />
+							</Label>
+							<Label>
+								Album
+								<InputGroup id="newAlbum" defaultValue={this.state.lastSelected.album} style={{marginBottom: 10}} fill />
+							</Label>
+							<Label>
+								Artist
+								<InputGroup id="newArtist" defaultValue={this.state.lastSelected.artist} style={{marginBottom: 10}} fill />
+							</Label>
+							<Button type="submit" className="bp3-minimal" icon="tick" intent="success">Apply Changes</Button>
+						</form>
+					</Card>
+				</Overlay>
 				<Menu 
 					style={{
 						position: 'absolute', 
@@ -294,7 +454,9 @@ class App extends Component {
 						visibility: this.state.contextVisible,
 						boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.2)'
 					}}>
-					<MenuItem text="Download" onClick={this.onDownload} />
+					<MenuItem text="Download" onClick={this.onDownload} icon="cloud-download" />
+					<MenuItem text="Edit" onClick={() => this.setState({showEdit: true})} icon="edit" />
+					<MenuItem text="Delete" onClick={this.onDelete} icon="remove" intent="danger" />
 				</Menu>
 			</div>
 		)

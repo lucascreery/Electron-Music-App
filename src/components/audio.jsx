@@ -130,7 +130,7 @@ export default class Audio extends Component {
               {this.props.name}
             </span>
             <span style={{marginRight: 10, flex: 1, textAlign: 'right'}}>
-              {this.state.duration ? this.state.currentTime.toFixed(1) + "/" + this.state.duration.toFixed(1) : ''}
+              {this.state.duration ? this.state.currentTime.toFixed(0) + "/" + this.state.duration.toFixed(1) : ''}
             </span>
           </div>
         </div>

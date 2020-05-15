@@ -2,6 +2,7 @@ const express = require("express")
 const Song = require('./models/song')
 const multer = require('multer')
 const mm = require('music-metadata')
+const fs = require('fs')
 
 const router = express.Router()
 
@@ -69,6 +70,52 @@ router.get("/download/:file", (req, res) => {
   res.download(__dirname + '/music/' + filename , (err) => {
     if(err) console.log('Error: ' + err)
   })
+})
+
+router.get("/delete/:file", async (req, res) => {
+  filename = req.params.file
+  console.log(filename)
+  let editfilename = filename.replace(/\s+/g, '%20')
+  try {
+    let dataName = 'music\\' + editfilename
+    await Song.deleteOne({filename: dataName}, async (err, result) => {
+      if(err){
+        console.log('Error: ' + err)
+      }else if(result.n != 0){
+        console.log(result)
+        const songs = await Song.find()
+        res.send(songs)
+        fs.unlinkSync(__dirname + '/music/' + filename)    
+      }else{
+        console.log('No file found')
+        res.status(400).send({
+          error: result
+        })
+      }
+    })
+  } catch (err) {
+    console.log('ERROR: ' + err)
+    res.status(400).send({
+      error: 'Could not delete' + filename
+    })
+  }
+})
+
+router.post("/edit/:id", async (req, res) => {
+  try {
+    const song = await Song.findOne({ _id: req.params.id})
+    const {title, album, artist} = req.body
+    song.title = title
+    song.album = album
+    song.artist = artist
+    await song.save()
+    const songs = await Song.find()
+    res.send(songs)
+  } catch {
+    res.status(400).send({
+      error: 'Could not Update'
+    })
+  }
 })
 
 module.exports = router
