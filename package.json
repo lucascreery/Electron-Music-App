@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
-    "electron": "^8.2.3",
+    "electron": "^11.5.0",
     "electron-devtools-installer": "^3.0.0",
     "electron-react-devtools": "^0.5.3",
     "foreman": "^3.0.1",
